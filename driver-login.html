@@ -73,7 +73,6 @@ body {
 }
 .btn:hover { transform:scale(1.05); }
 
-/* --- Responsive tweaks --- */
 @media (max-width: 500px) {
   .card {
     padding:20px;
@@ -119,12 +118,13 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
+// ✅ Corrected Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCSNc89kJbq45tyB8yG91Ge-NgrsNGuXYs",
   authDomain: "bus-buddy-website.firebaseapp.com",
-  databaseURL: "https://bus-buddy-website-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  databaseURL: "https://bus-buddy-website-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "bus-buddy-website",
-  storageBucket: "bus-buddy-website.firebasestorage.app",
+  storageBucket: "bus-buddy-website.appspot.com",
   messagingSenderId: "160372015537",
   appId: "1:160372015537:web:bb8758716101f1b6dc3d90",
   measurementId: "G-V6NP9VG2Q5"
@@ -137,26 +137,43 @@ window.shareLocation = function(){
   let u = document.getElementById('username').value.trim();
   let p = document.getElementById('password').value.trim();
   let r = document.getElementById('route').value.trim();
-  if(!u || !p || !r){ alert("⚠ Please fill username, password and select a route"); return; }
+  if(!u || !p || !r){ 
+    alert("⚠ Please fill username, password and select a route"); 
+    return; 
+  }
 
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(async pos => {
       let lat = pos.coords.latitude;
       let lng = pos.coords.longitude;
 
-      await set(ref(db, "drivers/" + u), {
-        name: u, password: p, route: r, lat: lat, lng: lng, time: new Date().toLocaleString()
-      });
+      try {
+        await set(ref(db, "drivers/" + u), {
+          name: u,
+          password: p,
+          route: r,
+          lat: lat,
+          lng: lng,
+          time: new Date().toLocaleString()
+        });
+        localStorage.setItem("driverUsername", u);
+        localStorage.setItem("selectedRoute", r);
+        localStorage.setItem("driverLat", lat);
+        localStorage.setItem("driverLng", lng);
 
-      localStorage.setItem("driverUsername", u);
-      localStorage.setItem("selectedRoute", r);
-      localStorage.setItem("driverLat", lat);
-      localStorage.setItem("driverLng", lng);
+        alert("✅ Location shared successfully!");
+        window.location.href = "track.html";
+      } catch (err) {
+        console.error("Firebase error:", err);
+        alert("❌ Failed to share location. Check console for details.");
+      }
 
-      alert("✅ Location shared!");
-      window.location.href="track.html";
-    }, err => alert("❌ Location access denied. Allow location."));
-  } else alert("❌ Geolocation not supported.");
+    }, err => {
+      alert("❌ Location access denied. Please allow location permission.");
+    });
+  } else {
+    alert("❌ Geolocation not supported in this browser.");
+  }
 }
 </script>
 </body>
